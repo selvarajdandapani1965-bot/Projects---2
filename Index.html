@@ -1,0 +1,1408 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Productivity Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4f6f8',
+                            100: '#e5e9ee',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js for Performance and Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.03);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.03);
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(75, 85, 99, 0.4);
+        }
+        /* Progress ring animations */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.5s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+    <!-- LOGIN / AUTH OVERLAY -->
+    <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 text-center space-y-5">
+            <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-xl border border-indigo-100 dark:border-indigo-900/50 shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Workspace Locked</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Authenticate with your master password to continue.</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="relative">
+                    <input type="password" id="loginPassword" placeholder="Enter password..." class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all dark:text-white text-slate-900 pr-10 text-sm" required />
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i id="loginEyeIcon" class="fa-solid fa-eye text-sm"></i>
+                    </button>
+                </div>
+                <div id="loginError" class="hidden text-red-500 text-xs text-left pl-1 font-medium">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect password. Please try again.
+                </div>
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
+                    Unlock Security Gate
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="appContainer" class="hidden flex-col min-h-screen">
+        
+        <!-- CLEAN MINIMALIST HEADER BAR -->
+        <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 lg:px-8 py-2.5 flex items-center justify-between transition-colors">
+            
+            <!-- TOP TAB NAVIGATION (DESKTOP) -->
+            <nav class="hidden md:flex items-center space-x-1 bg-slate-100/80 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
+                <button onclick="switchTab('todo')" id="nav-todo" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Tasks & Analytics</span>
+                </button>
+                <button onclick="switchTab('finance')" id="nav-finance" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>Finance Tracker</span>
+                </button>
+                <button onclick="switchTab('mood')" id="nav-mood" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Nightly Mood</span>
+                </button>
+                <button onclick="switchTab('vent')" id="nav-vent" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>Incinerator</span>
+                </button>
+            </nav>
+
+            <!-- MOBILE BRAND TITLE -->
+            <div class="md:hidden font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-circle-nodes text-indigo-500"></i>
+                <span>Suite</span>
+            </div>
+
+            <!-- RIGHT ACTION BUTTONS -->
+            <div class="flex items-center space-x-1.5">
+                <!-- DARK/LIGHT TOGGLE -->
+                <button onclick="toggleTheme()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+                </button>
+
+                <!-- SETTINGS MODAL TRIGGER -->
+                <button onclick="openSettingsModal()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition" title="Settings & Data">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+
+                <!-- LOCK BUTTON -->
+                <button onclick="lockApp()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition" title="Lock Workspace">
+                    <i class="fa-solid fa-lock text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MOBILE NAVIGATION BOTTOM BAR -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex justify-around items-center">
+            <button onclick="switchTab('todo')" id="mob-nav-todo" class="mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-medium text-slate-500">
+                <i class="fa-solid fa-list-check text-base mb-0.5"></i>
+                <span>Tasks</span>
+            </button>
+            <button onclick="switchTab('finance')" id="mob-nav-finance" class="mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-medium text-slate-500">
+                <i class="fa-solid fa-wallet text-base mb-0.5"></i>
+                <span>Finance</span>
+            </button>
+            <button onclick="switchTab('mood')" id="mob-nav-mood" class="mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-medium text-slate-500">
+                <i class="fa-solid fa-moon text-base mb-0.5"></i>
+                <span>Mood</span>
+            </button>
+            <button onclick="switchTab('vent')" id="mob-nav-vent" class="mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-medium text-slate-500">
+                <i class="fa-solid fa-fire text-base mb-0.5"></i>
+                <span>Venting</span>
+            </button>
+        </nav>
+
+        <!-- MAIN VIEW MODULES -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 pb-24 md:pb-8">
+
+            <!-- MODULE 1: TO-DO & PERFORMANCE ANALYTICS -->
+            <section id="todoSection" class="tab-content space-y-6">
+                <!-- SECTION TITLE & ACTIONS -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Task Management & Analytics</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Organize daily priorities and analyze long-term performance trends.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="confirmClearTasks('completed')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 transition">
+                            <i class="fa-solid fa-broom mr-1 text-slate-400"></i> Clear Completed
+                        </button>
+                        <button onclick="confirmClearTasks('all')" class="px-3 py-1.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-semibold rounded-lg text-red-600 dark:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Clear History
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- TASK CREATION & LISTING (2 COLS) -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <!-- CREATION CARD -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                            <form id="addTaskForm" onsubmit="handleAddTask(event)" class="space-y-3">
+                                <div class="flex flex-col sm:flex-row gap-2.5">
+                                    <input type="text" id="taskTitle" placeholder="What needs to be done?" class="flex-grow px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white text-sm" required />
+                                    <select id="taskPriority" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none dark:text-white">
+                                        <option value="low">Low Priority</option>
+                                        <option value="medium" selected>Medium Priority</option>
+                                        <option value="high">High Priority</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2.5 items-center">
+                                    <input type="text" id="taskCategory" placeholder="Category (e.g. Work, Health)" class="w-full sm:w-1/2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" />
+                                    <input type="date" id="taskDueDate" class="w-full sm:w-1/2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" />
+                                    <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-1.5 shrink-0">
+                                        <i class="fa-solid fa-plus"></i>
+                                        <span>Add Task</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- LIST CARD -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Task Overview</h3>
+                                    <span id="taskCountBadge" class="bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                                </div>
+                                <div class="flex items-center space-x-1 text-xs">
+                                    <button onclick="filterTasks('all')" id="filter-all" class="task-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60">All</button>
+                                    <button onclick="filterTasks('active')" id="filter-active" class="task-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400">Active</button>
+                                    <button onclick="filterTasks('completed')" id="filter-completed" class="task-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400">Completed</button>
+                                </div>
+                            </div>
+                            <div id="taskList" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                                <!-- Dynamic Insert -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PERFORMANCE ANALYTICS (1 COL) -->
+                    <div class="space-y-4">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-pie text-indigo-500"></i>
+                                    <span>Performance Rate</span>
+                                </h3>
+                                <!-- TIMEFRAME SELECTOR -->
+                                <select id="analyticsTimeframe" onchange="renderTaskAnalytics()" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs rounded-lg px-2 py-1 focus:outline-none dark:text-slate-200 font-semibold">
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="year">This Year</option>
+                                    <option value="multiyear">Multi-Year</option>
+                                </select>
+                            </div>
+
+                            <!-- VISUAL PROGRESS RING & STATS -->
+                            <div class="flex items-center justify-around py-2">
+                                <div class="relative w-28 h-28 flex items-center justify-center">
+                                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                                        <circle class="text-slate-100 dark:text-slate-800" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                                        <circle id="progressRingCircle" class="text-indigo-600 dark:text-indigo-400 progress-ring__circle" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                                    </svg>
+                                    <div class="absolute flex flex-col items-center justify-center text-center">
+                                        <span id="metricRate" class="text-xl font-extrabold text-slate-900 dark:text-white">0%</span>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Ratio</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 w-28 text-center">
+                                        <span class="text-[10px] text-slate-400 block font-semibold uppercase">Completed</span>
+                                        <span id="metricCompleted" class="text-lg font-bold text-emerald-600 dark:text-emerald-400">0</span>
+                                    </div>
+                                    <div class="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 w-28 text-center">
+                                        <span class="text-[10px] text-slate-400 block font-semibold uppercase">Pending</span>
+                                        <span id="metricPending" class="text-lg font-bold text-amber-600 dark:text-amber-400">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CHART CANVAS -->
+                            <div class="relative h-48 w-full pt-1">
+                                <canvas id="taskAnalyticsChart"></canvas>
+                            </div>
+
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500 text-center italic">Synced directly with calendar timeline dates.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 2: FINANCIAL TRACKER -->
+            <section id="financeSection" class="tab-content hidden space-y-6">
+                <!-- TITLE & ACTIONS -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Financial Tracker</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Track cash flows, analyze expenses, and maintain financial clarity.</p>
+                    </div>
+                    <div>
+                        <button onclick="confirmClearFinance('all')" class="px-3 py-1.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-semibold rounded-lg text-red-600 dark:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Clear Ledger History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUMMARY METRICS CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Income</span>
+                            <h3 id="financeTotalIncome" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">$0.00</h3>
+                        </div>
+                        <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-arrow-down-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Expenses</span>
+                            <h3 id="financeTotalExpense" class="text-xl font-extrabold text-rose-600 dark:text-rose-400 mt-0.5">$0.00</h3>
+                        </div>
+                        <div class="w-10 h-10 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-xl flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-arrow-up-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Balance</span>
+                            <h3 id="financeNetBalance" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">$0.00</h3>
+                        </div>
+                        <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM & LEDGER GRID -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- LOGGING FORM (1 COL) -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm h-fit space-y-3">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-indigo-500"></i>
+                            <span>Log Transaction</span>
+                        </h3>
+                        <form id="addFinanceForm" onsubmit="handleAddFinance(event)" class="space-y-3">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Type</label>
+                                <select id="finType" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white">
+                                    <option value="expense">Expense (-)</option>
+                                    <option value="income">Income (+)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Amount ($)</label>
+                                <input type="number" step="0.01" min="0.01" id="finAmount" placeholder="0.00" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Category</label>
+                                <input type="text" id="finCategory" placeholder="e.g. Salary, Rent, Food" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Date</label>
+                                <input type="date" id="finDate" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" required />
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition shadow-md shadow-indigo-600/20 mt-1">
+                                Save Entry
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- TRANSACTION LEDGER (2 COLS) -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Transaction History</h3>
+                            <span class="text-[11px] text-slate-400">Recent entries</span>
+                        </div>
+                        <div id="financeList" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                            <!-- Dynamic Insert -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 3: DAILY NIGHTLY MOOD TRACKER -->
+            <section id="moodSection" class="tab-content hidden space-y-6">
+                <!-- TITLE & ACTIONS -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Nightly Mood & Journal</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Log evening reflections, track energy levels, and analyze emotional trends.</p>
+                    </div>
+                    <div>
+                        <button onclick="confirmClearMood('all')" class="px-3 py-1.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-semibold rounded-lg text-red-600 dark:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Clear Mood History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STREAK & SUMMARY CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-amber-50 dark:bg-amber-950/60 text-amber-500 rounded-xl flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-fire"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase">Logging Streak</span>
+                            <h3 id="moodStreakDisplay" class="text-lg font-extrabold text-slate-900 dark:text-white">0 Days</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-500 rounded-xl flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-face-smile"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase">Average Mood</span>
+                            <h3 id="moodAvgDisplay" class="text-lg font-extrabold text-slate-900 dark:text-white">N/A</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- LOGGING FORM (1 COL) -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-3">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-moon text-indigo-500"></i>
+                            <span>Evening Log</span>
+                        </h3>
+                        <form id="addMoodForm" onsubmit="handleAddMood(event)" class="space-y-3">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">State of Mind</label>
+                                <div class="grid grid-cols-5 gap-1.5">
+                                    <button type="button" onclick="selectMoodIcon(1)" class="mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center" data-val="1" title="Very Low">😫</button>
+                                    <button type="button" onclick="selectMoodIcon(2)" class="mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center" data-val="2" title="Low">🙁</button>
+                                    <button type="button" onclick="selectMoodIcon(3)" class="mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40" data-val="3" title="Neutral">😐</button>
+                                    <button type="button" onclick="selectMoodIcon(4)" class="mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center" data-val="4" title="Good">🙂</button>
+                                    <button type="button" onclick="selectMoodIcon(5)" class="mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center" data-val="5" title="Excellent">😊</button>
+                                </div>
+                                <input type="hidden" id="selectedMoodScore" value="3" />
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Energy Level (1-10)</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="range" id="moodEnergy" min="1" max="10" value="5" oninput="document.getElementById('energyValDisplay').innerText = this.value" class="w-full accent-indigo-600" />
+                                    <span id="energyValDisplay" class="text-xs font-bold w-5 text-center text-indigo-600 dark:text-indigo-400">5</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Log Date</label>
+                                <input type="date" id="moodDate" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" required />
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Nightly Reflection</label>
+                                <textarea id="moodNotes" rows="3" placeholder="Notes or reflections before bed..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white resize-none"></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition shadow-md shadow-indigo-600/20">
+                                Save Reflection
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- ANALYTICS & LOG LIST (2 COLS) -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-line text-indigo-500"></i>
+                                    <span>Mood Trend Analytics</span>
+                                </h3>
+                                <select id="moodTimeframe" onchange="renderMoodAnalytics()" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs rounded-lg px-2 py-1 focus:outline-none dark:text-slate-200 font-semibold">
+                                    <option value="week">Past 7 Entries</option>
+                                    <option value="month">Past Month</option>
+                                    <option value="year">Past Year</option>
+                                </select>
+                            </div>
+                            <div class="relative h-44 w-full">
+                                <canvas id="moodAnalyticsChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- MOOD HISTORY LIST -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-3">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">Past Logs</h3>
+                            <div id="moodList" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                                <!-- Dynamic Insert -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 4: ANGER VENTING & INCINERATOR -->
+            <section id="ventSection" class="tab-content hidden space-y-6">
+                <div class="text-center max-w-xl mx-auto space-y-2">
+                    <div class="inline-flex items-center justify-center w-12 h-12 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-2xl text-xl border border-red-100 dark:border-red-900/40">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                    </div>
+                    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Mental Incinerator</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Vent unexpressed frustrations or toxic thoughts. Clicking incinerate burns the text into ashes with real-time particle and audio effects. Nothing typed here is ever stored.</p>
+                </div>
+
+                <!-- CANVAS & TEXTAREA WRAPPER -->
+                <div class="max-w-2xl mx-auto relative">
+                    <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl overflow-hidden">
+                        
+                        <!-- FIRE ANIMATION CANVAS OVERLAY -->
+                        <canvas id="burnCanvas" class="absolute inset-0 w-full h-full z-20 pointer-events-none"></canvas>
+
+                        <!-- TEXT INPUT AREA -->
+                        <div class="relative z-10 space-y-3">
+                            <textarea id="ventTextArea" rows="9" placeholder="Type freely... write whatever you need to release..." class="w-full p-4 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none dark:text-slate-100 resize-none transition-opacity duration-300"></textarea>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                                    <i class="fa-solid fa-lock text-emerald-500"></i> Transient state
+                                </span>
+                                <button onclick="triggerIncineration()" id="burnBtn" class="px-5 py-2.5 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-bold rounded-xl shadow-lg shadow-red-600/20 transition transform active:scale-95 text-xs flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-fire"></i>
+                                    <span>Incinerate Thoughts</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- SYSTEM SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-500"></i>
+                    <span>Settings & Data Management</span>
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- CHANGE PASSWORD -->
+            <form id="changePasswordForm" onsubmit="handleChangePassword(event)" class="space-y-3">
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Security / Change Password</h4>
+                
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Current Password</label>
+                    <input type="password" id="currPasswordInput" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" required />
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">New Password</label>
+                    <input type="password" id="newPasswordInput" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" required />
+                </div>
+                <div id="passwordError" class="hidden text-red-500 text-xs"></div>
+                <div id="passwordSuccess" class="hidden text-emerald-500 text-xs">Password updated successfully!</div>
+
+                <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition">
+                    Update Password
+                </button>
+            </form>
+
+            <!-- WIPE ALL DATA -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2">
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">System Reset</h4>
+                <button onclick="confirmWipeAllData()" class="w-full py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-semibold rounded-xl text-xs transition">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Wipe All Application Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRMATION DIALOG -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-4">
+            <div class="w-12 h-12 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mx-auto text-lg border border-red-100 dark:border-red-900/40">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="confirmTitle" class="text-base font-bold text-slate-900 dark:text-white">Are you sure?</h3>
+                <p id="confirmMessage" class="text-xs text-slate-500 dark:text-slate-400 mt-1">This action cannot be reversed.</p>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button id="confirmProceedBtn" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-xs transition">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // STORAGE KEYS
+        const STORAGE_KEYS = {
+            PASSWORD: 'suite_app_password',
+            TASKS: 'suite_app_tasks',
+            FINANCE: 'suite_app_finance',
+            MOOD: 'suite_app_mood',
+            THEME: 'suite_app_theme'
+        };
+
+        const DEFAULT_PASSWORD = "Patrick Bateman";
+
+        let currentActiveTab = 'todo';
+        let taskFilterState = 'all';
+        let taskChartInstance = null;
+        let moodChartInstance = null;
+        let confirmActionCallback = null;
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            setDefaultDates();
+            
+            const isUnlocked = sessionStorage.getItem('suite_unlocked') === 'true';
+            if (isUnlocked) {
+                showApp();
+            } else {
+                showLock();
+            }
+        });
+
+        // AUTHENTICATION
+        function getMasterPassword() {
+            return localStorage.getItem(STORAGE_KEYS.PASSWORD) || DEFAULT_PASSWORD;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('loginPassword').value;
+            const actualPassword = getMasterPassword();
+
+            if (inputVal === actualPassword) {
+                sessionStorage.setItem('suite_unlocked', 'true');
+                document.getElementById('loginError').classList.add('hidden');
+                document.getElementById('loginPassword').value = '';
+                showApp();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function lockApp() {
+            sessionStorage.removeItem('suite_unlocked');
+            closeSettingsModal();
+            showLock();
+        }
+
+        function showLock() {
+            document.getElementById('authOverlay').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('flex');
+        }
+
+        function showApp() {
+            document.getElementById('authOverlay').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('flex');
+            
+            renderTasks();
+            renderFinance();
+            renderMood();
+            switchTab(currentActiveTab);
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const currInput = document.getElementById('currPasswordInput').value;
+            const newInput = document.getElementById('newPasswordInput').value;
+            const errDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+
+            errDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            if (currInput !== getMasterPassword()) {
+                errDiv.innerText = 'Current password incorrect.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!newInput || newInput.trim().length < 3) {
+                errDiv.innerText = 'New password must be at least 3 characters.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            localStorage.setItem(STORAGE_KEYS.PASSWORD, newInput.trim());
+            successDiv.classList.remove('hidden');
+            document.getElementById('currPasswordInput').value = '';
+            document.getElementById('newPasswordInput').value = '';
+        }
+
+        function confirmWipeAllData() {
+            showConfirmModal('Reset All Application Data?', 'This will wipe tasks, finances, mood history, and restore default settings.', () => {
+                localStorage.clear();
+                sessionStorage.clear();
+                location.reload();
+            });
+        }
+
+        // THEME MANAGEMENT
+        function initTheme() {
+            const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'dark';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-amber-400 text-sm';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-indigo-600 text-sm';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400 text-sm' : 'fa-solid fa-moon text-indigo-600 text-sm';
+            
+            renderTaskAnalytics();
+            renderMoodAnalytics();
+        }
+
+        // NAVIGATION SWITCHING
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${tabId}Section`).classList.remove('hidden');
+
+            // Desktop Nav Styling
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white';
+            });
+            const activeDesktopBtn = document.getElementById(`nav-${tabId}`);
+            if (activeDesktopBtn) {
+                activeDesktopBtn.className = 'tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm';
+            }
+
+            // Mobile Nav Styling
+            document.querySelectorAll('.mob-tab-btn').forEach(btn => {
+                btn.className = 'mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-medium text-slate-500 dark:text-slate-400';
+            });
+            const activeMobBtn = document.getElementById(`mob-nav-${tabId}`);
+            if (activeMobBtn) {
+                activeMobBtn.className = 'mob-tab-btn flex flex-col items-center p-2 rounded-xl text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50';
+            }
+
+            if (tabId === 'vent') resizeCanvas();
+            else if (tabId === 'todo') renderTaskAnalytics();
+            else if (tabId === 'mood') renderMoodAnalytics();
+        }
+
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('taskDueDate').value = today;
+            document.getElementById('finDate').value = today;
+            document.getElementById('moodDate').value = today;
+        }
+
+        // CONFIRMATION DIALOG HELPER
+        function showConfirmModal(title, msg, onConfirm) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = msg;
+            confirmActionCallback = onConfirm;
+            document.getElementById('confirmModal').classList.remove('hidden');
+
+            document.getElementById('confirmProceedBtn').onclick = () => {
+                if (confirmActionCallback) confirmActionCallback();
+                closeConfirmModal();
+            };
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            confirmActionCallback = null;
+        }
+
+        function openSettingsModal() {
+            document.getElementById('passwordError').classList.add('hidden');
+            document.getElementById('passwordSuccess').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // MODULE 1: TASKS & PERFORMANCE LOGIC
+        // ==========================================
+        function getTasks() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
+        }
+
+        function saveTasks(tasks) {
+            localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+            renderTasks();
+            renderTaskAnalytics();
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value.trim();
+            const priority = document.getElementById('taskPriority').value;
+            const category = document.getElementById('taskCategory').value.trim() || 'General';
+            const dueDate = document.getElementById('taskDueDate').value;
+
+            if (!title) return;
+
+            const newTask = {
+                id: Date.now().toString(),
+                title,
+                priority,
+                category,
+                dueDate,
+                completed: false,
+                completedAt: null,
+                createdAt: new Date().toISOString()
+            };
+
+            const tasks = getTasks();
+            tasks.unshift(newTask);
+            saveTasks(tasks);
+
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskCategory').value = '';
+        }
+
+        function toggleTaskStatus(id) {
+            const tasks = getTasks();
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                task.completedAt = task.completed ? new Date().toISOString() : null;
+                saveTasks(tasks);
+            }
+        }
+
+        function deleteTask(id) {
+            const tasks = getTasks().filter(t => t.id !== id);
+            saveTasks(tasks);
+        }
+
+        function confirmClearTasks(type) {
+            if (type === 'completed') {
+                showConfirmModal('Clear Completed Tasks?', 'This removes finished tasks from memory.', () => {
+                    const tasks = getTasks().filter(t => !t.completed);
+                    saveTasks(tasks);
+                });
+            } else {
+                showConfirmModal('Wipe All Task Records?', 'This will delete all active and archived tasks.', () => {
+                    saveTasks([]);
+                });
+            }
+        }
+
+        function filterTasks(state) {
+            taskFilterState = state;
+            document.querySelectorAll('.task-filter-btn').forEach(btn => {
+                btn.className = 'task-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400';
+            });
+            const activeBtn = document.getElementById(`filter-${state}`);
+            if (activeBtn) {
+                activeBtn.className = 'task-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60';
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const tasks = getTasks();
+            const container = document.getElementById('taskList');
+            container.innerHTML = '';
+
+            let filtered = tasks;
+            if (taskFilterState === 'active') filtered = tasks.filter(t => !t.completed);
+            if (taskFilterState === 'completed') filtered = tasks.filter(t => t.completed);
+
+            document.getElementById('taskCountBadge').innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs italic">No tasks found.</div>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const priorityColors = {
+                    high: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900',
+                    medium: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-900',
+                    low: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900'
+                };
+
+                const itemHtml = `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 rounded-xl hover:border-indigo-300 dark:hover:border-slate-600 transition group">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskStatus('${t.id}')" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 dark:bg-slate-900 dark:border-slate-700 cursor-pointer" />
+                            <div class="truncate">
+                                <span class="text-xs font-semibold text-slate-900 dark:text-slate-100 ${t.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${escapeHtml(t.title)}</span>
+                                <div class="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5">
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider ${priorityColors[t.priority]}">${t.priority}</span>
+                                    <span>• ${escapeHtml(t.category)}</span>
+                                    <span>• Due ${t.dueDate}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteTask('${t.id}')" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 opacity-80 group-hover:opacity-100 transition">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        // PERFORMANCE ANALYTICS ENGINE
+        function renderTaskAnalytics() {
+            const tasks = getTasks();
+            const tf = document.getElementById('analyticsTimeframe').value;
+            const now = new Date();
+
+            let labels = [];
+            let completedCounts = [];
+
+            if (tf === 'week') {
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(now.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+                    const compTasks = tasks.filter(t => t.completed && t.completedAt && t.completedAt.startsWith(dateStr));
+                    completedCounts.push(compTasks.length);
+                }
+            } else if (tf === 'month') {
+                for (let i = 3; i >= 0; i--) {
+                    labels.push(`Week ${4-i}`);
+                    const start = new Date();
+                    start.setDate(now.getDate() - (i + 1) * 7);
+                    const end = new Date();
+                    end.setDate(now.getDate() - i * 7);
+
+                    const comp = tasks.filter(t => {
+                        if (!t.completed || !t.completedAt) return false;
+                        const cDate = new Date(t.completedAt);
+                        return cDate >= start && cDate <= end;
+                    }).length;
+                    completedCounts.push(comp);
+                }
+            } else if (tf === 'year') {
+                for (let i = 11; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    labels.push(d.toLocaleDateString('en-US', { month: 'short' }));
+                    const m = d.getMonth();
+                    const y = d.getFullYear();
+                    const comp = tasks.filter(t => {
+                        if (!t.completed || !t.completedAt) return false;
+                        const cDate = new Date(t.completedAt);
+                        return cDate.getMonth() === m && cDate.getFullYear() === y;
+                    }).length;
+                    completedCounts.push(comp);
+                }
+            } else if (tf === 'multiyear') {
+                const currentYr = now.getFullYear();
+                for (let y = currentYr - 2; y <= currentYr; y++) {
+                    labels.push(y.toString());
+                    const comp = tasks.filter(t => {
+                        if (!t.completed || !t.completedAt) return false;
+                        return new Date(t.completedAt).getFullYear() === y;
+                    }).length;
+                    completedCounts.push(comp);
+                }
+            }
+
+            // Metrics calculation
+            const totalComp = tasks.filter(t => t.completed).length;
+            const totalPending = tasks.filter(t => !t.completed).length;
+            const rate = tasks.length > 0 ? Math.round((totalComp / tasks.length) * 100) : 0;
+
+            document.getElementById('metricCompleted').innerText = totalComp;
+            document.getElementById('metricPending').innerText = totalPending;
+            document.getElementById('metricRate').innerText = `${rate}%`;
+
+            // SVG Progress ring calculation
+            const circle = document.getElementById('progressRingCircle');
+            const circumference = 2 * Math.PI * 40; // r=40
+            const offset = circumference - (rate / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Chart Rendering
+            const isDark = document.documentElement.classList.contains('dark');
+            const ctx = document.getElementById('taskAnalyticsChart').getContext('2d');
+
+            if (taskChartInstance) taskChartInstance.destroy();
+
+            taskChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Completed Tasks',
+                        data: completedCounts,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                            ticks: { precision: 0, color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // MODULE 2: FINANCIAL TRACKER LOGIC
+        // ==========================================
+        function getFinance() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.FINANCE) || '[]');
+        }
+
+        function saveFinance(items) {
+            localStorage.setItem(STORAGE_KEYS.FINANCE, JSON.stringify(items));
+            renderFinance();
+        }
+
+        function handleAddFinance(e) {
+            e.preventDefault();
+            const type = document.getElementById('finType').value;
+            const amount = parseFloat(document.getElementById('finAmount').value);
+            const category = document.getElementById('finCategory').value.trim();
+            const date = document.getElementById('finDate').value;
+
+            if (!amount || isNaN(amount) || !category) return;
+
+            const entry = {
+                id: Date.now().toString(),
+                type,
+                amount,
+                category,
+                date
+            };
+
+            const list = getFinance();
+            list.unshift(entry);
+            saveFinance(list);
+
+            document.getElementById('finAmount').value = '';
+            document.getElementById('finCategory').value = '';
+        }
+
+        function deleteFinance(id) {
+            const list = getFinance().filter(f => f.id !== id);
+            saveFinance(list);
+        }
+
+        function confirmClearFinance(type) {
+            showConfirmModal('Wipe Financial Ledger?', 'This will clear all logged expenses and income records.', () => {
+                saveFinance([]);
+            });
+        }
+
+        function renderFinance() {
+            const list = getFinance();
+            const container = document.getElementById('financeList');
+            container.innerHTML = '';
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs italic">No financial records found.</div>`;
+            } else {
+                list.forEach(item => {
+                    if (item.type === 'income') totalIncome += item.amount;
+                    else totalExpense += item.amount;
+
+                    const isIncome = item.type === 'income';
+                    const html = `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 rounded-xl hover:border-slate-300 dark:hover:border-slate-600 transition group">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isIncome ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600' : 'bg-rose-100 dark:bg-rose-950 text-rose-600'}">
+                                    <i class="fa-solid ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(item.category)}</h4>
+                                    <span class="text-[10px] text-slate-400">${item.date}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xs font-bold ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+                                    ${isIncome ? '+' : '-'}$${item.amount.toFixed(2)}
+                                </span>
+                                <button onclick="deleteFinance('${item.id}')" class="text-slate-400 hover:text-red-500 opacity-80 group-hover:opacity-100 transition p-1">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            }
+
+            const net = totalIncome - totalExpense;
+            document.getElementById('financeTotalIncome').innerText = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('financeTotalExpense').innerText = `$${totalExpense.toFixed(2)}`;
+            document.getElementById('financeNetBalance').innerText = `$${net.toFixed(2)}`;
+        }
+
+        // ==========================================
+        // MODULE 3: DAILY NIGHTLY MOOD TRACKER LOGIC
+        // ==========================================
+        function getMoods() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.MOOD) || '[]');
+        }
+
+        function saveMoods(list) {
+            localStorage.setItem(STORAGE_KEYS.MOOD, JSON.stringify(list));
+            renderMood();
+            renderMoodAnalytics();
+        }
+
+        function selectMoodIcon(score) {
+            document.getElementById('selectedMoodScore').value = score;
+            document.querySelectorAll('.mood-select-btn').forEach(btn => {
+                const val = btn.getAttribute('data-val');
+                if (parseInt(val) === score) {
+                    btn.className = 'mood-select-btn p-2.5 rounded-xl border border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-xl transition flex items-center justify-center';
+                } else {
+                    btn.className = 'mood-select-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition flex items-center justify-center';
+                }
+            });
+        }
+
+        function handleAddMood(e) {
+            e.preventDefault();
+            const score = parseInt(document.getElementById('selectedMoodScore').value);
+            const energy = parseInt(document.getElementById('moodEnergy').value);
+            const date = document.getElementById('moodDate').value;
+            const notes = document.getElementById('moodNotes').value.trim();
+
+            const entry = {
+                id: Date.now().toString(),
+                score,
+                energy,
+                date,
+                notes,
+                timestamp: new Date().toISOString()
+            };
+
+            const list = getMoods();
+            list.unshift(entry);
+            saveMoods(list);
+
+            document.getElementById('moodNotes').value = '';
+        }
+
+        function deleteMood(id) {
+            const list = getMoods().filter(m => m.id !== id);
+            saveMoods(list);
+        }
+
+        function confirmClearMood(type) {
+            showConfirmModal('Clear Mood Log History?', 'This will delete all past nightly mood entries.', () => {
+                saveMoods([]);
+            });
+        }
+
+        function renderMood() {
+            const list = getMoods();
+            const container = document.getElementById('moodList');
+            container.innerHTML = '';
+
+            const moodEmojis = { 1: '😫', 2: '🙁', 3: '😐', 4: '🙂', 5: '😊' };
+
+            // Calculate streak & avg
+            const streak = list.length;
+            const totalScore = list.reduce((acc, m) => acc + m.score, 0);
+            const avg = list.length > 0 ? (totalScore / list.length).toFixed(1) : 'N/A';
+
+            document.getElementById('moodStreakDisplay').innerText = `${streak} Log${streak === 1 ? '' : 's'}`;
+            document.getElementById('moodAvgDisplay').innerText = avg !== 'N/A' ? `${avg} / 5` : 'N/A';
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No mood logs recorded yet.</div>`;
+                return;
+            }
+
+            list.forEach(m => {
+                const html = `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 rounded-xl space-y-1 group">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xl">${moodEmojis[m.score] || '😐'}</span>
+                                <div>
+                                    <span class="text-xs font-semibold text-slate-900 dark:text-slate-100">${m.date}</span>
+                                    <span class="text-[10px] text-slate-400 block">Energy: ${m.energy}/10</span>
+                                </div>
+                            </div>
+                            <button onclick="deleteMood('${m.id}')" class="text-slate-400 hover:text-red-500 opacity-80 group-hover:opacity-100 transition p-1">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                        ${m.notes ? `<p class="text-[11px] text-slate-600 dark:text-slate-300 italic pt-1 border-t border-slate-100 dark:border-slate-800">${escapeHtml(m.notes)}</p>` : ''}
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderMoodAnalytics() {
+            const moods = getMoods().reverse();
+            const tf = document.getElementById('moodTimeframe').value;
+
+            let filtered = moods;
+            if (tf === 'week') filtered = moods.slice(-7);
+            else if (tf === 'month') filtered = moods.slice(-30);
+            else if (tf === 'year') filtered = moods.slice(-365);
+
+            const labels = filtered.map(m => m.date);
+            const scores = filtered.map(m => m.score);
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const ctx = document.getElementById('moodAnalyticsChart').getContext('2d');
+
+            if (moodChartInstance) moodChartInstance.destroy();
+
+            moodChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Mood Level (1-5)',
+                        data: scores,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
+                        },
+                        y: {
+                            min: 1,
+                            max: 5,
+                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                            ticks: { stepSize: 1, color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // MODULE 4: INCINERATOR & SOUND SYNTHESIS
+        // ==========================================
+        let canvas, ctx, particles = [];
+        let isIncinerating = false;
+
+        function resizeCanvas() {
+            canvas = document.getElementById('burnCanvas');
+            if (!canvas) return;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx = canvas.getContext('2d');
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // WEB AUDIO API SOUND SYNTHESIS
+        function playIncinerateSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const audioCtx = new AudioCtx();
+
+                // Create noise buffer for fire crackle sound
+                const bufferSize = audioCtx.sampleRate * 1.5;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                filter.Q.setValueAtTime(3, audioCtx.currentTime);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+
+                whiteNoise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                whiteNoise.start();
+                whiteNoise.stop(audioCtx.currentTime + 1.5);
+            } catch (e) {
+                console.log("Audio synthesis blocked or unsupported");
+            }
+        }
+
+        function triggerIncineration() {
+            const textarea = document.getElementById('ventTextArea');
+            if (!textarea.value.trim() || isIncinerating) return;
+
+            isIncinerating = true;
+            document.getElementById('burnBtn').disabled = true;
+
+            playIncinerateSound();
+
+            textarea.style.transition = 'opacity 1.2s ease-out';
+            textarea.style.opacity = '0';
+
+            particles = [];
+            const count = 300;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * w,
+                    y: h + Math.random() * 40,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: -(Math.random() * 7 + 4),
+                    size: Math.random() * 5 + 2,
+                    color: Math.random() > 0.3 ? `rgba(239, 68, 68, ${Math.random() * 0.8 + 0.2})` : `rgba(245, 158, 11, ${Math.random() * 0.8 + 0.2})`,
+                    life: Math.random() * 70 + 40
+                });
+            }
+
+            let frames = 0;
+            function animateFire() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                particles = particles.filter(p => p.life > 0 && p.y > 0);
+
+                if (particles.length > 0 || frames < 60) {
+                    frames++;
+                    requestAnimationFrame(animateFire);
+                } else {
+                    textarea.value = '';
+                    textarea.style.opacity = '1';
+                    isIncinerating = false;
+                    document.getElementById('burnBtn').disabled = false;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            animateFire();
+        }
+
+        // ESCAPE HTML UTILITY
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
+```
