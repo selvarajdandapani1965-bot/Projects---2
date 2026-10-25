@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cheat System - Life OS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#090d16',
+                            card: 'rgba(15, 23, 42, 0.75)',
+                            border: 'rgba(56, 189, 248, 0.2)',
+                            cyan: '#06b6d4',
+                            neon: '#22d3ee',
+                            pink: '#f43f5e',
+                            amber: '#f59e0b',
+                            emerald: '#10b981',
+                            purple: '#a855f7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Chart.js & Lucide Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #060911;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(13, 20, 36, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+        .glass-card {
+            background: rgba(18, 28, 51, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Neon Glow Utility */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+        }
+        .glow-pink {
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.25);
+        }
+        /* Hide scrollbars for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Flame burning animation container */
+        #incineratorCanvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none pb-20">
+
+    <!-- MASTER LOCK SCREEN OVERLAY -->
+    <div id="masterLockOverlay" class="fixed inset-0 z-50 bg-[#060911] flex flex-col items-center justify-center p-6">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl flex flex-col items-center border border-cyan-500/30 glow-cyan">
+            <div class="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mb-6 border border-cyan-500/40 text-cyan-400">
+                <i data-lucide="shield-check" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-wider text-white mb-1 font-mono">CHEAT SYSTEM</h1>
+            <p class="text-xs text-cyan-400/70 mb-8 font-mono tracking-widest uppercase">System Security Clearance Required</p>
+
+            <form id="masterPassForm" class="w-full flex flex-col gap-4" onsubmit="handleMasterUnlock(event)">
+                <div class="relative">
+                    <input type="password" id="masterPassInput" placeholder="Enter Master Passcode" 
+                        class="w-full bg-slate-900/80 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3.5 text-center text-white placeholder-slate-500 font-mono tracking-widest text-lg outline-none transition-all">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-3.5 rounded-xl shadow-lg transition-all active:scale-[0.98] font-mono tracking-wider flex items-center justify-center gap-2">
+                    <i data-lucide="lock-open" class="w-4 h-4"></i> AUTHENTICATE
+                </button>
+            </form>
+            <p id="masterPassErr" class="text-rose-500 text-xs mt-4 hidden font-mono text-center">ACCESS DENIED: INVALID PASSCODE</p>
+        </div>
+    </div>
+
+    <!-- FINANCE LOCK MODAL -->
+    <div id="financeLockModal" class="fixed inset-0 z-40 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-6">
+        <div class="glass-panel w-full max-w-sm p-6 rounded-2xl flex flex-col items-center border border-emerald-500/30">
+            <div class="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 border border-emerald-500/40 text-emerald-400">
+                <i data-lucide="vault" class="w-7 h-7"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white font-mono">FINANCIAL VAULT</h2>
+            <p class="text-xs text-slate-400 mb-6 text-center">Enter secondary passcode to view assets</p>
+
+            <form id="financePassForm" class="w-full flex flex-col gap-4" onsubmit="handleFinanceUnlock(event)">
+                <input type="password" id="financePassInput" placeholder="Enter Vault Passcode" 
+                    class="w-full bg-slate-900/80 border border-slate-700 focus:border-emerald-400 rounded-xl px-4 py-3 text-center text-white placeholder-slate-500 font-mono text-lg outline-none">
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelFinanceUnlock()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-mono text-sm">CANCEL</button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl font-mono text-sm shadow-lg">ACCESS</button>
+                </div>
+            </form>
+            <p id="financePassErr" class="text-rose-500 text-xs mt-3 hidden font-mono">ACCESS DENIED</p>
+        </div>
+    </div>
+
+    <!-- GLOBAL WARNING / DEPRESSION / DELUSION MODAL -->
+    <div id="alertModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-6">
+        <div id="alertModalCard" class="glass-panel w-full max-w-md p-6 rounded-3xl border flex flex-col items-center text-center">
+            <div id="alertIconBg" class="w-16 h-16 rounded-full flex items-center justify-center mb-4 border">
+                <i id="alertIcon" data-lucide="alert-triangle" class="w-8 h-8"></i>
+            </div>
+            <h3 id="alertTitle" class="text-xl font-bold mb-2 font-mono">SYSTEM WARNING</h3>
+            <p id="alertBody" class="text-sm text-slate-300 mb-6 leading-relaxed"></p>
+            <div id="alertActions" class="flex flex-col gap-2 w-full">
+                <button onclick="closeAlertModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl font-mono text-sm">ACKNOWLEDGE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 bg-[#060911]/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></div>
+            <span class="font-mono text-sm font-bold tracking-wider text-cyan-400">CHEAT SYSTEM v4.0</span>
+        </div>
+        <div class="text-right">
+            <div id="headerClock" class="font-mono text-xs font-semibold text-slate-200">00:00:00</div>
+            <div id="headerDate" class="font-mono text-[10px] text-slate-400">00 MMM 2026</div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTENT PANELS -->
+    <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
+
+        <!-- SECTION 1: DASHBOARD (HOMEPAGE) -->
+        <section id="panel-dashboard" class="app-panel space-y-4">
+            <!-- Alert Banner Area -->
+            <div id="dashBanner" class="hidden glass-card p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex items-start gap-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+                <div>
+                    <h4 id="dashBannerTitle" class="text-xs font-bold text-amber-400 font-mono">SYSTEM NOTICE</h4>
+                    <p id="dashBannerText" class="text-xs text-slate-300 mt-0.5">Maintain consistent tracking routines.</p>
+                </div>
+            </div>
+
+            <!-- HUD Life Quality Metric -->
+            <div class="glass-panel p-5 rounded-3xl relative overflow-hidden glow-cyan border-cyan-500/30">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-[10px] font-mono tracking-widest uppercase text-cyan-400">Overall State Index</span>
+                        <h2 class="text-2xl font-bold text-white font-mono mt-0.5" id="dashLqiVal">0 / 100</h2>
+                    </div>
+                    <span id="dashLqiBadge" class="px-2.5 py-1 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">STABLE</span>
+                </div>
+                <!-- Progress bar -->
+                <div class="w-full bg-slate-900 rounded-full h-2.5 mb-4 overflow-hidden p-0.5 border border-slate-800">
+                    <div id="dashLqiBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-800/80">
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-mono">PRODUCTIVITY</p>
+                        <p class="text-sm font-bold font-mono text-cyan-400" id="dashProdVal">0%</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-mono">MOOD</p>
+                        <p class="text-sm font-bold font-mono text-pink-400" id="dashMoodVal">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-mono">SLEEP</p>
+                        <p class="text-sm font-bold font-mono text-purple-400" id="dashSleepVal">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Overview Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Net Worth Quick Card -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[10px] font-mono uppercase tracking-wider">Net Worth</span>
+                        <i data-lucide="indian-rupee" class="w-4 h-4 text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h3 id="dashNetWorth" class="text-xl font-bold text-white font-mono">₹ ****</h3>
+                        <p class="text-[10px] text-slate-400 font-mono mt-1">Vault Status: Locked</p>
+                    </div>
+                </div>
+
+                <!-- Today's ToDo Quick Card -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[10px] font-mono uppercase tracking-wider">Today's Tasks</span>
+                        <i data-lucide="check-square" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h3 id="dashTaskRatio" class="text-xl font-bold text-white font-mono">0 / 0</h3>
+                        <p class="text-[10px] text-cyan-400 font-mono mt-1" id="dashTaskPercent">0% Completed</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incinerator Shortcut Quick Widget -->
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-rose-500/20 bg-rose-500/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400 border border-rose-500/30">
+                        <i data-lucide="flame" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-white">The Void Incinerator</h4>
+                        <p class="text-[11px] text-slate-400">Burn stress & low mood thoughts</p>
+                    </div>
+                </div>
+                <button onclick="switchTab('incinerator')" class="px-3 py-1.5 bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-mono font-medium transition-all">
+                    ENTER
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DAILY TODO & TRACKER -->
+        <section id="panel-todo" class="app-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold font-mono text-white flex items-center gap-2">
+                    <i data-lucide="check-square" class="w-5 h-5 text-cyan-400"></i> DAILY TASKS & ENGINE
+                </h2>
+                <button onclick="toggleElement('addTaskForm')" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-mono flex items-center gap-1 shadow">
+                    <i data-lucide="plus" class="w-4 h-4"></i> NEW TASK
+                </button>
+            </div>
+
+            <!-- Task Input Form -->
+            <form id="addTaskForm" class="hidden glass-panel p-4 rounded-2xl space-y-3 border-cyan-500/30" onsubmit="handleAddTask(event)">
+                <input type="text" id="taskName" placeholder="Task description..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:border-cyan-400 outline-none">
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="date" id="taskDate" required class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-400 outline-none font-mono">
+                    <select id="taskCategory" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-400 outline-none">
+                        <option value="Work">Work</option>
+                        <option value="Health">Health</option>
+                        <option value="Mind">Mind</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                    <select id="taskImportance" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-400 outline-none">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="toggleElement('addTaskForm')" class="w-1/2 bg-slate-800 text-slate-300 py-2 rounded-xl text-xs font-mono">CANCEL</button>
+                    <button type="submit" class="w-1/2 bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded-xl text-xs font-mono font-semibold">SAVE TASK</button>
+                </div>
+            </form>
+
+            <!-- Tasks List -->
+            <div id="todoListContainer" class="space-y-2">
+                <!-- Dynamic Items Inserted Here -->
+            </div>
+
+            <!-- Analytics & Timelines -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3 mt-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Task Completion History</h3>
+                    <div class="flex bg-slate-900 p-0.5 rounded-lg text-[10px] font-mono border border-slate-800">
+                        <button onclick="updateTodoChartFilter('weekly')" id="todoFilter-weekly" class="px-2 py-1 rounded bg-cyan-600 text-white">W</button>
+                        <button onclick="updateTodoChartFilter('monthly')" id="todoFilter-monthly" class="px-2 py-1 rounded text-slate-400">M</button>
+                        <button onclick="updateTodoChartFilter('yearly')" id="todoFilter-yearly" class="px-2 py-1 rounded text-slate-400">Y</button>
+                        <button onclick="updateTodoChartFilter('multi')" id="todoFilter-multi" class="px-2 py-1 rounded text-slate-400">MULTI</button>
+                    </div>
+                </div>
+                <div class="h-48 w-full">
+                    <canvas id="todoChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: FINANCIAL TRACKER (PROTECTED) -->
+        <section id="panel-finance" class="app-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold font-mono text-emerald-400 flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-5 h-5"></i> ASSETS & TRANSACTIONS
+                </h2>
+                <button onclick="lockFinance()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Net Worth Summary -->
+            <div class="glass-panel p-5 rounded-3xl border-emerald-500/30 bg-emerald-500/5 glow-cyan">
+                <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Total Net Worth</span>
+                <h1 class="text-3xl font-bold font-mono text-white mt-1" id="finTotalNetWorth">₹ 0</h1>
+                
+                <!-- Cash in hand standalone input -->
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i>
+                        <span class="text-xs font-mono text-slate-300">Cash In Hand:</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs text-emerald-400 font-mono">₹</span>
+                        <input type="number" id="cashInHandInput" onchange="updateCashInHand(this.value)" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-right text-white font-mono focus:border-emerald-400 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounts Management (Bank & UPI) -->
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Bank Accounts -->
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                            <i data-lucide="building-2" class="w-4 h-4 text-blue-400"></i> Bank Accounts
+                        </h3>
+                        <button onclick="toggleElement('addBankForm')" class="text-xs font-mono text-emerald-400 hover:underline">+ Add</button>
+                    </div>
+
+                    <form id="addBankForm" class="hidden space-y-2 pt-2 border-t border-slate-800" onsubmit="handleAddBank(event)">
+                        <input type="text" id="bankName" placeholder="Bank Name (e.g. HDFC)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                        <input type="number" id="bankBalance" placeholder="Initial Balance ₹" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                        <button type="submit" class="w-full bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-mono">ADD BANK</button>
+                    </form>
+
+                    <div id="bankAccountsList" class="space-y-1.5"></div>
+                </div>
+
+                <!-- UPI Accounts -->
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                            <i data-lucide="qr-code" class="w-4 h-4 text-purple-400"></i> UPI Apps / Linked
+                        </h3>
+                        <button onclick="toggleElement('addUpiForm')" class="text-xs font-mono text-emerald-400 hover:underline">+ Add</button>
+                    </div>
+
+                    <form id="addUpiForm" class="hidden space-y-2 pt-2 border-t border-slate-800" onsubmit="handleAddUpi(event)">
+                        <input type="text" id="upiName" placeholder="UPI Handle/App (e.g. GPay)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                        <input type="number" id="upiBalance" placeholder="Initial Balance ₹" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                        <button type="submit" class="w-full bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-mono">ADD UPI</button>
+                    </form>
+
+                    <div id="upiAccountsList" class="space-y-1.5"></div>
+                </div>
+            </div>
+
+            <!-- Transaction Logger -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Log New Transaction</h3>
+                <form id="txnForm" class="space-y-2.5" onsubmit="handleLogTxn(event)">
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="txnType" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <option value="Expense">Expense (-)</option>
+                            <option value="Income">Income (+)</option>
+                        </select>
+                        <input type="number" id="txnAmount" placeholder="Amount ₹" required class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="txnAccount" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <option value="Cash">Cash In Hand</option>
+                            <!-- Dynamic Banks and UPI will auto populate -->
+                        </select>
+                        <input type="text" id="txnDesc" placeholder="Description" required class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 text-emerald-400 py-2.5 rounded-xl font-mono text-xs font-semibold">RECORD TRANSACTION</button>
+                </form>
+            </div>
+
+            <!-- Financial Analytics Charts -->
+            <div class="glass-panel p-4 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Asset Breakdown</h3>
+                </div>
+                <div class="h-48 w-full flex items-center justify-center">
+                    <canvas id="financePieChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: MOOD TRACKER -->
+        <section id="panel-mood" class="app-panel hidden space-y-4">
+            <h2 class="text-lg font-bold font-mono text-pink-400 flex items-center gap-2">
+                <i data-lucide="smile" class="w-5 h-5"></i> MOOD MATRIX
+            </h2>
+
+            <!-- Nightly Check-in Card -->
+            <div class="glass-panel p-5 rounded-3xl border-pink-500/30 space-y-4">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Nightly Mood Check-in</h3>
+                
+                <form id="moodForm" class="space-y-3" onsubmit="handleMoodSubmit(event)">
+                    <div class="flex justify-between items-center px-2">
+                        <button type="button" onclick="selectMoodScore(1)" class="mood-score-btn w-10 h-10 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-400 text-lg flex items-center justify-center font-bold">1</button>
+                        <button type="button" onclick="selectMoodScore(2)" class="mood-score-btn w-10 h-10 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-400 text-lg flex items-center justify-center font-bold">2</button>
+                        <button type="button" onclick="selectMoodScore(3)" class="mood-score-btn w-10 h-10 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-lg flex items-center justify-center font-bold">3</button>
+                        <button type="button" onclick="selectMoodScore(4)" class="mood-score-btn w-10 h-10 rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-lg flex items-center justify-center font-bold">4</button>
+                        <button type="button" onclick="selectMoodScore(5)" class="mood-score-btn w-10 h-10 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-lg flex items-center justify-center font-bold">5</button>
+                    </div>
+                    <input type="hidden" id="selectedMoodScore" value="3">
+
+                    <div class="flex flex-wrap gap-1.5 pt-2">
+                        <span onclick="toggleEmotionTag(this)" class="emotion-tag px-2.5 py-1 rounded-lg text-[10px] font-mono border border-slate-700 text-slate-400 cursor-pointer">Calm</span>
+                        <span onclick="toggleEmotionTag(this)" class="emotion-tag px-2.5 py-1 rounded-lg text-[10px] font-mono border border-slate-700 text-slate-400 cursor-pointer">Anxious</span>
+                        <span onclick="toggleEmotionTag(this)" class="emotion-tag px-2.5 py-1 rounded-lg text-[10px] font-mono border border-slate-700 text-slate-400 cursor-pointer">Focused</span>
+                        <span onclick="toggleEmotionTag(this)" class="emotion-tag px-2.5 py-1 rounded-lg text-[10px] font-mono border border-slate-700 text-slate-400 cursor-pointer">Exhausted</span>
+                        <span onclick="toggleEmotionTag(this)" class="emotion-tag px-2.5 py-1 rounded-lg text-[10px] font-mono border border-slate-700 text-slate-400 cursor-pointer">Motivated</span>
+                    </div>
+
+                    <textarea id="moodNote" rows="2" placeholder="Brief note on your state..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-pink-400 outline-none resize-none"></textarea>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-mono text-xs py-3 rounded-xl font-semibold shadow">LOG MOOD</button>
+                </form>
+            </div>
+
+            <!-- Mood Timeline Chart -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Mood Trend</h3>
+                    <div class="flex bg-slate-900 p-0.5 rounded-lg text-[10px] font-mono border border-slate-800">
+                        <button onclick="updateMoodChartFilter('weekly')" id="moodFilter-weekly" class="px-2 py-1 rounded bg-pink-600 text-white">W</button>
+                        <button onclick="updateMoodChartFilter('monthly')" id="moodFilter-monthly" class="px-2 py-1 rounded text-slate-400">M</button>
+                        <button onclick="updateMoodChartFilter('yearly')" id="moodFilter-yearly" class="px-2 py-1 rounded text-slate-400">Y</button>
+                    </div>
+                </div>
+                <div class="h-44 w-full">
+                    <canvas id="moodChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: INCINERATOR ("THE VOID") -->
+        <section id="panel-incinerator" class="app-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold font-mono text-rose-500 flex items-center gap-2">
+                    <i data-lucide="flame" class="w-5 h-5"></i> THE INCINERATOR
+                </h2>
+                <span class="text-[10px] font-mono text-slate-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20">CATHARSIS ENGINE</span>
+            </div>
+
+            <!-- Flame Canvas Area -->
+            <div class="glass-panel p-4 rounded-3xl border-rose-500/30 flex flex-col items-center relative overflow-hidden">
+                <canvas id="incineratorCanvas" class="w-full h-44 rounded-2xl bg-slate-950/80 mb-3 border border-slate-800"></canvas>
+                
+                <textarea id="incineratorInput" rows="3" placeholder="Type negative thoughts, anxieties, or toxic burdens here to burn into ash..." class="w-full bg-slate-900 border border-slate-800 focus:border-rose-500 rounded-xl p-3 text-xs text-rose-100 placeholder-slate-600 outline-none resize-none transition-all font-mono"></textarea>
+                
+                <button onclick="burnThought()" class="w-full mt-3 bg-gradient-to-r from-rose-700 via-orange-600 to-amber-600 hover:from-rose-600 hover:to-amber-500 text-white font-mono text-xs py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <i data-lucide="flame" class="w-4 h-4"></i> INCINERATE THOUGHT
+                </button>
+            </div>
+
+            <!-- Grounding & Breathing Widget -->
+            <div class="glass-card p-4 rounded-2xl space-y-3">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-2">
+                    <i data-lucide="wind" class="w-4 h-4 text-cyan-400"></i> Box Breathing De-escalation
+                </h3>
+                <div class="flex items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-slate-800">
+                    <div>
+                        <p id="breathState" class="text-xs font-mono font-bold text-cyan-400">Inhale (4s)</p>
+                        <p class="text-[10px] text-slate-400">Focus on the expanding cycle</p>
+                    </div>
+                    <div id="breathCircle" class="w-10 h-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-xs font-mono font-bold text-cyan-400 transition-all duration-1000 scale-100">
+                        4
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: SLEEP TRACKER -->
+        <section id="panel-sleep" class="app-panel hidden space-y-4">
+            <h2 class="text-lg font-bold font-mono text-purple-400 flex items-center gap-2">
+                <i data-lucide="moon" class="w-5 h-5"></i> SLEEP MONITOR
+            </h2>
+
+            <div class="glass-panel p-5 rounded-3xl border-purple-500/30 space-y-4">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Morning Sleep Record</h3>
+                <form id="sleepForm" class="space-y-3" onsubmit="handleSleepSubmit(event)">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-mono text-slate-400">Duration (Hours)</label>
+                            <input type="number" step="0.5" id="sleepHours" placeholder="7.5" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-400 outline-none font-mono">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-mono text-slate-400">Quality (1 - 10)</label>
+                            <input type="number" min="1" max="10" id="sleepQuality" placeholder="8" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-400 outline-none font-mono">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-mono text-xs py-3 rounded-xl font-semibold shadow">LOG SLEEP DATA</button>
+                </form>
+            </div>
+
+            <!-- Sleep Chart -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Sleep Trends</h3>
+                    <div class="flex bg-slate-900 p-0.5 rounded-lg text-[10px] font-mono border border-slate-800">
+                        <button onclick="updateSleepChartFilter('weekly')" id="sleepFilter-weekly" class="px-2 py-1 rounded bg-purple-600 text-white">W</button>
+                        <button onclick="updateSleepChartFilter('monthly')" id="sleepFilter-monthly" class="px-2 py-1 rounded text-slate-400">M</button>
+                        <button onclick="updateSleepChartFilter('yearly')" id="sleepFilter-yearly" class="px-2 py-1 rounded text-slate-400">Y</button>
+                    </div>
+                </div>
+                <div class="h-44 w-full">
+                    <canvas id="sleepChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: LIFE QUALITY ANALYZER -->
+        <section id="panel-analyzer" class="app-panel hidden space-y-4">
+            <h2 class="text-lg font-bold font-mono text-cyan-400 flex items-center gap-2">
+                <i data-lucide="activity" class="w-5 h-5"></i> LIFE QUALITY ANALYZER
+            </h2>
+
+            <!-- Radar Chart Card -->
+            <div class="glass-panel p-5 rounded-3xl border-cyan-500/30 flex flex-col items-center">
+                <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-2">Multidimensional Balance</span>
+                <div class="w-full h-56 flex items-center justify-center">
+                    <canvas id="analyzerRadarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Detailed Analysis Report -->
+            <div class="glass-card p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 class="text-xs font-mono font-bold text-slate-200">Executive Diagnostics</h3>
+                    <span id="analyzerDate" class="text-[10px] font-mono text-cyan-400">--</span>
+                </div>
+                <div id="analyzerReportText" class="text-xs text-slate-300 leading-relaxed space-y-2 font-mono">
+                    <!-- Dynamic analysis text generated here -->
+                </div>
+                <button onclick="downloadReport()" class="w-full bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 py-2.5 rounded-xl text-xs font-mono font-semibold flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> EXPORT SUMMARY REPORT
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 8: SETTINGS -->
+        <section id="panel-settings" class="app-panel hidden space-y-4">
+            <h2 class="text-lg font-bold font-mono text-slate-200 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-slate-400"></i> SYSTEM CONFIGURATION
+            </h2>
+
+            <!-- Passcode Settings -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Security Passcodes</h3>
+                
+                <form onsubmit="handleChangeMasterPass(event)" class="space-y-2 pt-1">
+                    <label class="text-[10px] font-mono text-slate-400">Change Master Passcode</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="newMasterPass" placeholder="New Passcode" required class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-2 rounded-xl text-xs font-mono">UPDATE</button>
+                    </div>
+                </form>
+
+                <form onsubmit="handleChangeFinancePass(event)" class="space-y-2 pt-2 border-t border-slate-800">
+                    <label class="text-[10px] font-mono text-slate-400">Change Finance Passcode</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="newFinancePass" placeholder="New Passcode" required class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-mono">UPDATE</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Backup & Export -->
+            <div class="glass-panel p-4 rounded-2xl space-y-3">
+                <h3 class="text-xs font-mono font-bold text-slate-300 uppercase">Data Operations</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportAppData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-xs font-mono border border-slate-700">
+                        EXPORT JSON
+                    </button>
+                    <button onclick="triggerImport()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-xs font-mono border border-slate-700">
+                        IMPORT DATA
+                    </button>
+                    <input type="file" id="importFileInput" onchange="importAppData(event)" class="hidden" accept=".json">
+                </div>
+            </div>
+
+            <!-- Factory Wipe -->
+            <div class="glass-panel p-4 rounded-2xl border-rose-500/30 space-y-3">
+                <h3 class="text-xs font-mono font-bold text-rose-400 uppercase">Factory Reset</h3>
+                <p class="text-[11px] text-slate-400">Permanently wipe all locally stored logs, tasks, financial records, and reset passcodes.</p>
+                <button onclick="factoryReset()" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 py-2.5 rounded-xl text-xs font-mono font-bold">
+                    WIPE ALL DATA
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FIXED BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 bg-[#060911]/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-2">
+        <div class="max-w-md mx-auto flex items-center justify-around">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex flex-col items-center gap-1 text-cyan-400 p-1">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">HUD</span>
+            </button>
+            <button onclick="switchTab('todo')" id="nav-todo" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Tasks</span>
+            </button>
+            <button onclick="switchTab('finance')" id="nav-finance" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Finance</span>
+            </button>
+            <button onclick="switchTab('mood')" id="nav-mood" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="smile" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Mood</span>
+            </button>
+            <button onclick="switchTab('incinerator')" id="nav-incinerator" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="flame" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Void</span>
+            </button>
+            <button onclick="switchTab('sleep')" id="nav-sleep" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="moon" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Sleep</span>
+            </button>
+            <button onclick="switchTab('analyzer')" id="nav-analyzer" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Report</span>
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center gap-1 text-slate-500 p-1">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="text-[9px] font-mono tracking-tighter">Settings</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN APP SCRIPT -->
+    <script>
+        // GLOBAL APP STATE & PERSISTENCE
+        const STORAGE_KEY = 'CHEAT_SYSTEM_STORAGE_v4';
+        
+        let defaultState = {
+            security: {
+                masterPass: 'Roxane',
+                financePass: 'Billionaire'
+            },
+            tasks: [],
+            finance: {
+                cashInHand: 0,
+                banks: [],
+                upi: [],
+                transactions: []
+            },
+            moods: [],
+            sleeps: []
+        };
+
+        let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState;
+
+        // Session flags
+        let isMasterUnlocked = false;
+        let isFinanceUnlocked = false;
+        let activeTab = 'dashboard';
+
+        // Chart instances
+        let charts = {};
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            startLiveClock();
+            checkMasterLock();
+            initIncineratorCanvas();
+            startBreathingCycle();
+            renderAllData();
+        });
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            renderAllData();
+        }
+
+        // LIVE CLOCK & DATE SYNC
+        function startLiveClock() {
+            const updateClock = () => {
+                const now = new Date();
+                document.getElementById('headerClock').innerText = now.toTimeString().split(' ')[0];
+                document.getElementById('headerDate').innerText = now.toLocaleDateString('en-GB', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                }).toUpperCase();
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        // SECURITY & UNLOCK LOGIC
+        function checkMasterLock() {
+            const overlay = document.getElementById('masterLockOverlay');
+            if (isMasterUnlocked) {
+                overlay.classList.add('hidden');
+            } else {
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function handleMasterUnlock(e) {
+            e.preventDefault();
+            const val = document.getElementById('masterPassInput').value;
+            if (val === state.security.masterPass) {
+                isMasterUnlocked = true;
+                document.getElementById('masterPassErr').classList.add('hidden');
+                document.getElementById('masterPassInput').value = '';
+                checkMasterLock();
+            } else {
+                document.getElementById('masterPassErr').classList.remove('hidden');
+            }
+        }
+
+        function handleFinanceUnlock(e) {
+            e.preventDefault();
+            const val = document.getElementById('financePassInput').value;
+            if (val === state.security.financePass) {
+                isFinanceUnlocked = true;
+                document.getElementById('financeLockModal').classList.add('hidden');
+                document.getElementById('financePassErr').classList.add('hidden');
+                document.getElementById('financePassInput').value = '';
+                switchTab('finance', true);
+            } else {
+                document.getElementById('financePassErr').classList.remove('hidden');
+            }
+        }
+
+        function cancelFinanceUnlock() {
+            document.getElementById('financeLockModal').classList.add('hidden');
+        }
+
+        function lockFinance() {
+            isFinanceUnlocked = false;
+            switchTab('dashboard');
+        }
+
+        function handleChangeMasterPass(e) {
+            e.preventDefault();
+            const val = document.getElementById('newMasterPass').value;
+            if (val) {
+                state.security.masterPass = val;
+                saveState();
+                showAlert('SECURITY', 'Master Passcode updated successfully.');
+                document.getElementById('newMasterPass').value = '';
+            }
+        }
+
+        function handleChangeFinancePass(e) {
+            e.preventDefault();
+            const val = document.getElementById('newFinancePass').value;
+            if (val) {
+                state.security.financePass = val;
+                saveState();
+                showAlert('SECURITY', 'Finance Vault Passcode updated successfully.');
+                document.getElementById('newFinancePass').value = '';
+            }
+        }
+
+        // NAVIGATION TABS SWITCHER
+        function switchTab(tabId, bypassFinanceCheck = false) {
+            if (tabId === 'finance' && !isFinanceUnlocked && !bypassFinanceCheck) {
+                document.getElementById('financeLockModal').classList.remove('hidden');
+                return;
+            }
+
+            activeTab = tabId;
+            document.querySelectorAll('.app-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`panel-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-cyan-400');
+                btn.classList.add('text-slate-500');
+            });
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-500');
+                activeBtn.classList.add('text-cyan-400');
+            }
+
+            // Trigger chart renders for target tab
+            setTimeout(() => renderChartsForTab(tabId), 50);
+        }
+
+        // HELPER UTILS
+        function toggleElement(id) {
+            document.getElementById(id).classList.toggle('hidden');
+        }
+
+        function showAlert(title, body, type = 'normal') {
+            const modal = document.getElementById('alertModal');
+            const card = document.getElementById('alertModalCard');
+            const iconBg = document.getElementById('alertIconBg');
+            
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertBody').innerText = body;
+
+            if (type === 'depression') {
+                card.className = "glass-panel w-full max-w-md p-6 rounded-3xl border border-rose-500/40 bg-rose-500/10 flex flex-col items-center text-center glow-pink";
+                iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-rose-500/40 bg-rose-500/20 text-rose-400";
+            } else if (type === 'delusion') {
+                card.className = "glass-panel w-full max-w-md p-6 rounded-3xl border border-amber-500/40 bg-amber-500/10 flex flex-col items-center text-center";
+                iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-amber-500/40 bg-amber-500/20 text-amber-400";
+            } else {
+                card.className = "glass-panel w-full max-w-md p-6 rounded-3xl border border-cyan-500/40 bg-cyan-500/10 flex flex-col items-center text-center";
+                iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-cyan-500/40 bg-cyan-500/20 text-cyan-400";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alertModal').classList.add('hidden');
+        }
+
+        // DATA RENDER PIPELINE
+        function renderAllData() {
+            renderDashboard();
+            renderTasks();
+            renderFinance();
+            renderMood();
+            renderSleep();
+            renderAnalyzer();
+            checkSystemTriggers();
+        }
+
+        // DASHBOARD COMPUTATIONS
+        function renderDashboard() {
+            // Calculate Today's ToDo Completion
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayTasks = state.tasks.filter(t => t.date === todayStr);
+            const completed = todayTasks.filter(t => t.completed).length;
+            const taskPct = todayTasks.length ? Math.round((completed / todayTasks.length) * 100) : 0;
+
+            document.getElementById('dashTaskRatio').innerText = `${completed} / ${todayTasks.length}`;
+            document.getElementById('dashTaskPercent').innerText = `${taskPct}% Completed Today`;
+
+            // Calculate Net Worth
+            let bankTotal = state.finance.banks.reduce((acc, b) => acc + Number(b.balance), 0);
+            let upiTotal = state.finance.upi.reduce((acc, u) => acc + Number(u.balance), 0);
+            let totalNW = bankTotal + upiTotal + Number(state.finance.cashInHand || 0);
+
+            document.getElementById('dashNetWorth').innerText = isFinanceUnlocked ? `₹ ${totalNW.toLocaleString('en-IN')}` : '₹ ****';
+
+            // Calculate Mood & Sleep averages
+            const lastMood = state.moods.length ? state.moods[state.moods.length - 1].score : null;
+            const lastSleep = state.sleeps.length ? state.sleeps[state.sleeps.length - 1].quality : null;
+
+            document.getElementById('dashProdVal').innerText = `${taskPct}%`;
+            document.getElementById('dashMoodVal').innerText = lastMood ? `${lastMood}/5` : '--';
+            document.getElementById('dashSleepVal').innerText = lastSleep ? `${lastSleep}/10` : '--';
+
+            // Calculate Overall LQI
+            let moodPct = lastMood ? (lastMood / 5) * 100 : 50;
+            let sleepPct = lastSleep ? (lastSleep / 10) * 100 : 50;
+            let lqi = Math.round((taskPct * 0.4) + (moodPct * 0.3) + (sleepPct * 0.3));
+
+            document.getElementById('dashLqiVal').innerText = `${lqi} / 100`;
+            document.getElementById('dashLqiBar').style.width = `${lqi}%`;
+
+            const badge = document.getElementById('dashLqiBadge');
+            if (lqi >= 75) {
+                badge.innerText = 'OPTIMAL';
+                badge.className = 'px-2.5 py-1 rounded-full text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+            } else if (lqi >= 45) {
+                badge.innerText = 'STABLE';
+                badge.className = 'px-2.5 py-1 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+            } else {
+                badge.innerText = 'CRITICAL';
+                badge.className = 'px-2.5 py-1 rounded-full text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30';
+            }
+        }
+
+        // SMART SYNC ALERTS & TRIGGERS
+        function checkSystemTriggers() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayTasks = state.tasks.filter(t => t.date === todayStr);
+            const completed = todayTasks.filter(t => t.completed).length;
+            const taskPct = todayTasks.length ? (completed / todayTasks.length) : 1;
+
+            const lastMood = state.moods.length ? state.moods[state.moods.length - 1] : null;
+
+            // Banner Warning UI reset
+            const banner = document.getElementById('dashBanner');
+            banner.classList.add('hidden');
+
+            if (lastMood) {
+                // Rule: Low Mood + Low Progress = Burnout Alert
+                if (lastMood.score <= 2 && taskPct < 0.3) {
+                    banner.classList.remove('hidden');
+                    document.getElementById('dashBannerTitle').innerText = 'BURNOUT VULNERABILITY ALERT';
+                    document.getElementById('dashBannerText').innerText = 'Low mood and low task completion detected. Reduce load.';
+                }
+                // Rule: High Mood + Low Progress = Delusion Warning
+                else if (lastMood.score >= 4 && taskPct < 0.25 && todayTasks.length > 0) {
+                    banner.classList.remove('hidden');
+                    document.getElementById('dashBannerTitle').innerText = 'DELUSION WARNING';
+                    document.getElementById('dashBannerText').innerText = 'High mood with minimal effort. Beware of complacency.';
+                }
+            }
+
+            // Check consecutive bad moods (score <= 2 for 3 consecutive entries)
+            if (state.moods.length >= 3) {
+                const recentMoods = state.moods.slice(-3);
+                const isConsecutiveBad = recentMoods.every(m => m.score <= 2);
+                if (isConsecutiveBad && !sessionStorage.getItem('depAlertShown')) {
+                    sessionStorage.setItem('depAlertShown', 'true');
+                    showAlert(
+                        'DEPRESSION WARNING POP-UP', 
+                        'Multiple consecutive days of low mood detected. Your mental health comes first. Take immediate rest, reach out to trusted support, or use the Incinerator tool.', 
+                        'depression'
+                    );
+                }
+            }
+        }
+
+        // TASK ENGINE LOGIC
+        function handleAddTask(e) {
+            e.preventDefault();
+            const task = {
+                id: Date.now().toString(),
+                name: document.getElementById('taskName').value,
+                date: document.getElementById('taskDate').value,
+                category: document.getElementById('taskCategory').value,
+                importance: document.getElementById('taskImportance').value,
+                completed: false
+            };
+            state.tasks.push(task);
+            saveState();
+            document.getElementById('addTaskForm').reset();
+            toggleElement('addTaskForm');
+        }
+
+        function toggleTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveState();
+                
+                // Trigger Smart Sync Check after action
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todayTasks = state.tasks.filter(t => t.date === todayStr);
+                const completedCount = todayTasks.filter(t => t.completed).length;
+                const taskPct = todayTasks.length ? (completedCount / todayTasks.length) : 0;
+                const lastMood = state.moods.length ? state.moods[state.moods.length - 1] : null;
+
+                if (lastMood && lastMood.score >= 4 && taskPct < 0.3 && todayTasks.length > 1) {
+                    showAlert('DELUSION WARNING', 'High mood but low effort detected. Avoid complacency!', 'delusion');
+                }
+            }
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveState();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('todoListContainer');
+            if (state.tasks.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 font-mono text-center py-6">No tasks recorded yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = state.tasks.map(t => {
+                const impColor = {
+                    'Low': 'text-slate-400 border-slate-700',
+                    'Medium': 'text-cyan-400 border-cyan-500/30',
+                    'High': 'text-amber-400 border-amber-500/30',
+                    'Critical': 'text-rose-400 border-rose-500/30'
+                }[t.importance];
+
+                return `
+                <div class="glass-card p-3 rounded-xl flex items-center justify-between gap-3 border ${t.completed ? 'opacity-50 border-slate-800' : 'border-slate-800'}">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask('${t.id}')" class="w-4 h-4 rounded accent-cyan-500 bg-slate-900 border-slate-700 cursor-pointer">
+                        <div class="truncate">
+                            <p class="text-xs text-slate-200 font-medium ${t.completed ? 'line-through text-slate-500' : ''}">${t.name}</p>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[9px] font-mono text-slate-400">${t.date}</span>
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 ${impColor}">${t.importance}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="deleteTask('${t.id}')" class="text-slate-500 hover:text-rose-400 p-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // FINANCIAL ENGINE LOGIC
+        function updateCashInHand(val) {
+            state.finance.cashInHand = Number(val) || 0;
+            saveState();
+        }
+
+        function handleAddBank(e) {
+            e.preventDefault();
+            const bank = {
+                id: Date.now().toString(),
+                name: document.getElementById('bankName').value,
+                balance: Number(document.getElementById('bankBalance').value) || 0
+            };
+            state.finance.banks.push(bank);
+            saveState();
+            document.getElementById('addBankForm').reset();
+            toggleElement('addBankForm');
+        }
+
+        function deleteBank(id) {
+            state.finance.banks = state.finance.banks.filter(b => b.id !== id);
+            saveState();
+        }
+
+        function handleAddUpi(e) {
+            e.preventDefault();
+            const upi = {
+                id: Date.now().toString(),
+                name: document.getElementById('upiName').value,
+                balance: Number(document.getElementById('upiBalance').value) || 0
+            };
+            state.finance.upi.push(upi);
+            saveState();
+            document.getElementById('addUpiForm').reset();
+            toggleElement('addUpiForm');
+        }
+
+        function deleteUpi(id) {
+            state.finance.upi = state.finance.upi.filter(u => u.id !== id);
+            saveState();
+        }
+
+        function handleLogTxn(e) {
+            e.preventDefault();
+            const type = document.getElementById('txnType').value;
+            const amount = Number(document.getElementById('txnAmount').value) || 0;
+            const account = document.getElementById('txnAccount').value;
+            const desc = document.getElementById('txnDesc').value;
+
+            // Adjust targeted account balance
+            if (account === 'Cash') {
+                if (type === 'Expense') state.finance.cashInHand -= amount;
+                else state.finance.cashInHand += amount;
+            } else if (account.startsWith('bank-')) {
+                const bId = account.replace('bank-', '');
+                const bank = state.finance.banks.find(b => b.id === bId);
+                if (bank) bank.balance += (type === 'Expense' ? -amount : amount);
+            } else if (account.startsWith('upi-')) {
+                const uId = account.replace('upi-', '');
+                const upi = state.finance.upi.find(u => u.id === uId);
+                if (upi) upi.balance += (type === 'Expense' ? -amount : amount);
+            }
+
+            state.finance.transactions.push({
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                type, amount, account, desc
+            });
+
+            saveState();
+            document.getElementById('txnForm').reset();
+        }
+
+        function renderFinance() {
+            document.getElementById('cashInHandInput').value = state.finance.cashInHand || 0;
+
+            // Bank Accounts Render
+            const bankList = document.getElementById('bankAccountsList');
+            bankList.innerHTML = state.finance.banks.map(b => `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                    <span class="font-mono text-slate-300">${b.name}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-emerald-400">₹ ${b.balance.toLocaleString('en-IN')}</span>
+                        <button onclick="deleteBank('${b.id}')" class="text-slate-500 hover:text-rose-400"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+            `).join('') || `<p class="text-[10px] text-slate-500 font-mono">No bank accounts added.</p>`;
+
+            // UPI Accounts Render
+            const upiList = document.getElementById('upiAccountsList');
+            upiList.innerHTML = state.finance.upi.map(u => `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                    <span class="font-mono text-slate-300">${u.name}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-emerald-400">₹ ${u.balance.toLocaleString('en-IN')}</span>
+                        <button onclick="deleteUpi('${u.id}')" class="text-slate-500 hover:text-rose-400"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+            `).join('') || `<p class="text-[10px] text-slate-500 font-mono">No UPI accounts added.</p>`;
+
+            // Populate Txn Account Dropdown Options
+            const txnSelect = document.getElementById('txnAccount');
+            let opts = `<option value="Cash">Cash In Hand</option>`;
+            state.finance.banks.forEach(b => opts += `<option value="bank-${b.id}">Bank: ${b.name}</option>`);
+            state.finance.upi.forEach(u => opts += `<option value="upi-${u.id}">UPI: ${u.name}</option>`);
+            txnSelect.innerHTML = opts;
+
+            // Calc Total Net Worth
+            let bankTotal = state.finance.banks.reduce((acc, b) => acc + Number(b.balance), 0);
+            let upiTotal = state.finance.upi.reduce((acc, u) => acc + Number(u.balance), 0);
+            let totalNW = bankTotal + upiTotal + Number(state.finance.cashInHand || 0);
+            document.getElementById('finTotalNetWorth').innerText = `₹ ${totalNW.toLocaleString('en-IN')}`;
+
+            lucide.createIcons();
+        }
+
+        // MOOD ENGINE LOGIC
+        let selectedMoodVal = 3;
+        function selectMoodScore(val) {
+            selectedMoodVal = val;
+            document.getElementById('selectedMoodScore').value = val;
+            document.querySelectorAll('.mood-score-btn').forEach((btn, idx) => {
+                if (idx + 1 === val) {
+                    btn.classList.add('ring-2', 'ring-pink-400', 'scale-105');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-pink-400', 'scale-105');
+                }
+            });
+        }
+
+        function toggleEmotionTag(el) {
+            el.classList.toggle('bg-pink-500/20');
+            el.classList.toggle('text-pink-300');
+            el.classList.toggle('border-pink-500/40');
+        }
+
+        function handleMoodSubmit(e) {
+            e.preventDefault();
+            const tags = Array.from(document.querySelectorAll('.emotion-tag.bg-pink-500\\/20')).map(el => el.innerText);
+            const entry = {
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                score: selectedMoodVal,
+                tags,
+                note: document.getElementById('moodNote').value
+            };
+            state.moods.push(entry);
+            saveState();
+            document.getElementById('moodForm').reset();
+            selectMoodScore(3);
+
+            // Single Bad Mood Trigger -> Suggest Incinerator
+            if (entry.score <= 2) {
+                showAlert(
+                    'LOW MOOD DETECTED', 
+                    'You logged a low mood score. Consider transferring your negative thoughts or anxieties into The Void Incinerator for cathartic release.',
+                    'normal'
+                );
+            }
+        }
+
+        function renderMood() {
+            // Placeholder for state refresh if needed
+        }
+
+        // SLEEP MONITOR LOGIC
+        function handleSleepSubmit(e) {
+            e.preventDefault();
+            const entry = {
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                hours: Number(document.getElementById('sleepHours').value) || 0,
+                quality: Number(document.getElementById('sleepQuality').value) || 0
+            };
+            state.sleeps.push(entry);
+            saveState();
+            document.getElementById('sleepForm').reset();
+            showAlert('SLEEP LOGGED', 'Sleep data successfully saved into memory.');
+        }
+
+        function renderSleep() {
+            // Placeholder for state refresh if needed
+        }
+
+        // INCINERATOR CANVASES & ANIMATION ENGINE
+        let canvas, ctx, particles = [];
+        function initIncineratorCanvas() {
+            canvas = document.getElementById('incineratorCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            animateParticles();
+        }
+
+        function burnThought() {
+            const input = document.getElementById('incineratorInput');
+            if (!input.value.trim()) return;
+
+            // Spawn flame ash particles
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() * 60 - 30),
+                    y: canvas.height - 20,
+                    vx: Math.random() * 4 - 2,
+                    vy: -(Math.random() * 5 + 3),
+                    size: Math.random() * 4 + 2,
+                    color: ['#f43f5e', '#f59e0b', '#ef4444', '#fbbf24'][Math.floor(Math.random() * 4)],
+                    life: 1
+                });
+            }
+
+            input.style.transform = 'scale(0.95)';
+            input.style.opacity = '0.3';
+            setTimeout(() => {
+                input.value = '';
+                input.style.transform = 'scale(1)';
+                input.style.opacity = '1';
+                showAlert('INCINERATED', 'Your thought has been reduced to ashes in The Void.');
+            }, 500);
+        }
+
+        function animateParticles() {
+            requestAnimationFrame(animateParticles);
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle background fire glow
+            let grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+            grad.addColorStop(0, 'rgba(244, 63, 94, 0.15)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.life <= 0) particles.splice(idx, 1);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // BOX BREATHING ENGINE
+        function startBreathingCycle() {
+            const states = [
+                { text: 'Inhale (4s)', scale: 'scale-125', col: 'text-cyan-400' },
+                { text: 'Hold (4s)', scale: 'scale-125', col: 'text-purple-400' },
+                { text: 'Exhale (4s)', scale: 'scale-90', col: 'text-pink-400' },
+                { text: 'Rest (4s)', scale: 'scale-100', col: 'text-slate-400' }
+            ];
+            let step = 0;
+            let timer = 4;
+
+            setInterval(() => {
+                timer--;
+                if (timer <= 0) {
+                    step = (step + 1) % 4;
+                    timer = 4;
+                }
+                const st = states[step];
+                const textEl = document.getElementById('breathState');
+                const circle = document.getElementById('breathCircle');
+
+                if (textEl && circle) {
+                    textEl.innerText = st.text;
+                    circle.innerText = timer;
+                    circle.className = `w-10 h-10 rounded-full border-2 border-current flex items-center justify-center text-xs font-mono font-bold transition-all duration-1000 ${st.scale} ${st.col}`;
+                }
+            }, 1000);
+        }
+
+        // ANALYZER REPORT GENERATOR
+        function renderAnalyzer() {
+            document.getElementById('analyzerDate').innerText = new Date().toLocaleDateString('en-GB');
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayTasks = state.tasks.filter(t => t.date === todayStr);
+            const completed = todayTasks.filter(t => t.completed).length;
+            const taskPct = todayTasks.length ? Math.round((completed / todayTasks.length) * 100) : 0;
+            const lastMood = state.moods.length ? state.moods[state.moods.length - 1].score : 3;
+            const lastSleep = state.sleeps.length ? state.sleeps[state.sleeps.length - 1].quality : 7;
+
+            const textContainer = document.getElementById('analyzerReportText');
+            textContainer.innerHTML = `
+                <p>• <strong class="text-cyan-400">Productivity Efficiency:</strong> Current rate at <strong>${taskPct}%</strong>. ${taskPct > 70 ? 'High operational efficiency observed.' : 'Sub-optimal execution rate detected.'}</p>
+                <p>• <strong class="text-pink-400">Emotional Stability:</strong> Rated <strong>${lastMood}/5</strong>. ${lastMood >= 4 ? 'Mindset remains resilient and proactive.' : 'Vulnerabilities detected; monitor cognitive load.'}</p>
+                <p>• <strong class="text-purple-400">Sleep Recovery:</strong> Sleep index calculated at <strong>${lastSleep}/10</strong>. ${lastSleep >= 7 ? 'Physiological state restored adequately.' : 'Rest deficits noted. Restructure bedtime routines.'}</p>
+            `;
+        }
+
+        function downloadReport() {
+            const dateStr = new Date().toISOString().split('T')[0];
+            const content = `CHEAT SYSTEM - LIFE QUALITY ANALYSIS REPORT [${dateStr}]\n\n` +
+                `Overall System Summary:\n` +
+                document.getElementById('analyzerReportText').innerText;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `CheatSystem_Report_${dateStr}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // CHART COMPUTATIONS & FILTER ENGINE
+        function renderChartsForTab(tabId) {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'JetBrains Mono';
+
+            if (tabId === 'todo') {
+                renderTodoChart('weekly');
+            } else if (tabId === 'finance') {
+                renderFinancePie();
+            } else if (tabId === 'mood') {
+                renderMoodChart('weekly');
+            } else if (tabId === 'sleep') {
+                renderSleepChart('weekly');
+            } else if (tabId === 'analyzer') {
+                renderAnalyzerRadar();
+            }
+        }
+
+        function renderTodoChart(filter) {
+            const ctx = document.getElementById('todoChart');
+            if (!ctx) return;
+            if (charts.todo) charts.todo.destroy();
+
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = [60, 80, 45, 90, 75, 50, 85]; // Sample auto updating timeline mock curve
+
+            charts.todo = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Completion %',
+                        data,
+                        backgroundColor: 'rgba(6, 182, 212, 0.5)',
+                        borderColor: '#06b6d4',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 0, max: 100 } }
+                }
+            });
+        }
+
+        function updateTodoChartFilter(f) {
+            ['weekly', 'monthly', 'yearly', 'multi'].forEach(k => {
+                const b = document.getElementById(`todoFilter-${k}`);
+                if (b) b.className = (k === f) ? 'px-2 py-1 rounded bg-cyan-600 text-white' : 'px-2 py-1 rounded text-slate-400';
+            });
+            renderTodoChart(f);
+        }
+
+        function renderFinancePie() {
+            const ctx = document.getElementById('financePieChart');
+            if (!ctx) return;
+            if (charts.financePie) charts.financePie.destroy();
+
+            let bankTotal = state.finance.banks.reduce((acc, b) => acc + Number(b.balance), 0);
+            let upiTotal = state.finance.upi.reduce((acc, u) => acc + Number(u.balance), 0);
+            let cash = Number(state.finance.cashInHand || 0);
+
+            charts.financePie = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bank Accounts', 'UPI Apps', 'Cash In Hand'],
+                    datasets: [{
+                        data: [bankTotal || 1, upiTotal || 1, cash || 1],
+                        backgroundColor: ['#3b82f6', '#a855f7', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function renderMoodChart(filter) {
+            const ctx = document.getElementById('moodChart');
+            if (!ctx) return;
+            if (charts.mood) charts.mood.destroy();
+
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = state.moods.length ? state.moods.slice(-7).map(m => m.score) : [3, 4, 2, 5, 4, 3, 4];
+
+            charts.mood = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Mood Scale',
+                        data,
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 1, max: 5 } }
+                }
+            });
+        }
+
+        function updateMoodChartFilter(f) {
+            ['weekly', 'monthly', 'yearly'].forEach(k => {
+                const b = document.getElementById(`moodFilter-${k}`);
+                if (b) b.className = (k === f) ? 'px-2 py-1 rounded bg-pink-600 text-white' : 'px-2 py-1 rounded text-slate-400';
+            });
+            renderMoodChart(f);
+        }
+
+        function renderSleepChart(filter) {
+            const ctx = document.getElementById('sleepChart');
+            if (!ctx) return;
+            if (charts.sleep) charts.sleep.destroy();
+
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = state.sleeps.length ? state.sleeps.slice(-7).map(s => s.hours) : [7, 6.5, 8, 7.5, 6, 8.5, 7];
+
+            charts.sleep = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Sleep Hours',
+                        data,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 0, max: 12 } }
+                }
+            });
+        }
+
+        function updateSleepChartFilter(f) {
+            ['weekly', 'monthly', 'yearly'].forEach(k => {
+                const b = document.getElementById(`sleepFilter-${k}`);
+                if (b) b.className = (k === f) ? 'px-2 py-1 rounded bg-purple-600 text-white' : 'px-2 py-1 rounded text-slate-400';
+            });
+            renderSleepChart(f);
+        }
+
+        function renderAnalyzerRadar() {
+            const ctx = document.getElementById('analyzerRadarChart');
+            if (!ctx) return;
+            if (charts.radar) charts.radar.destroy();
+
+            charts.radar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Productivity', 'Mood', 'Sleep Quality', 'Financial Balance', 'Mindfulness'],
+                    datasets: [{
+                        label: 'Life Balance Index',
+                        data: [75, 80, 70, 85, 90],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                        pointBackgroundColor: '#06b6d4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                            ticks: { display: false, backdropColor: 'transparent' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // BACKUP & FACTORY RESET
+        function exportAppData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `CheatSystem_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function importAppData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const imported = JSON.parse(event.target.result);
+                    state = imported;
+                    saveState();
+                    showAlert('RESTORED', 'Data backup successfully loaded into memory.');
+                } catch (err) {
+                    showAlert('ERROR', 'Invalid JSON file format.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function factoryReset() {
+            if (confirm('PERMANENT WIPE WARNING: Are you sure you want to completely erase all app data and reset passcodes?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                state = defaultState;
+                saveState();
+                isMasterUnlocked = false;
+                isFinanceUnlocked = false;
+                checkMasterLock();
+                showAlert('SYSTEM WIPED', 'Factory reset completed.');
+            }
+        }
+    </script>
+</body>
+</html>
