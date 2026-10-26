@@ -1,7 +1,7 @@
 {
-  "name": "Cheat System - Cyberpunk Life OS",
+  "name": "Cheat System",
   "short_name": "Cheat OS",
-  "start_url": "./Cheat System (2).html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#04060d",
   "theme_color": "#04060d",
