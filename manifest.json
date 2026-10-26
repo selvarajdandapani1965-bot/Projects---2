@@ -1,0 +1,15 @@
+{
+  "name": "Cheat System - Cyberpunk Life OS",
+  "short_name": "Cheat OS",
+  "start_url": "./Cheat System (2).html",
+  "display": "standalone",
+  "background_color": "#04060d",
+  "theme_color": "#04060d",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1055/1055685.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
